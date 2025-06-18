@@ -1,0 +1,10 @@
+google==3.0.0
+google-generativeai==0.8.5
+grpcio-status==1.71.0
+ipykernel==6.29.5
+langchain-openai==0.3.24
+numpy==2.3.0
+pip==25.1
+replicate==1.0.7
+setuptools==78.1.1
+wheel==0.45.1

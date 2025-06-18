@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 import os
 import requests
 import re
@@ -12,13 +12,21 @@ replicate_models = ['llama-2-70b-chat', 'mixtral-8x7b-instruct-v0.1']
 # replicate_models = ['llama-2-70b-chat']
 hf_models = ['pmc-llama-13b', 'medalpaca-13b', 'meditron-7b', \
              'meditron-7b-chat', 'meditron-70b', 'mixtral-8x7b-instruct-v0.1']
+azure_openai_models = ['azure-gpt-4o']
 
 with open("api_config.json", "r") as jsonfile:
     api_config = json.load(jsonfile)
 class llm_model:
     def __init__(self, model_name):
         self.model_name = model_name
-
+        if model_name in azure_openai_models:
+            self.client = AzureOpenAI(
+                azure_endpoint=api_config['azure_openai']["AZURE_OPENAI_ENDPOINT"],
+                api_key=api_config['azure_openai']["AZURE_OPENAI_API_KEY"],
+                api_version=api_config['azure_openai']["OPENAI_API_VERSION"]
+            )
+            self.deployment_name = api_config['azure_openai']["DEPLOYMENT_NAME"]
+            
         if self.model_name in openai_models:
             self.api_key = api_config['OpenAI']["API_KEY"]
             self.client = OpenAI(api_key=self.api_key)
@@ -36,6 +44,10 @@ class llm_model:
             self.api_key = api_config[self.model_name]["API_KEY"]
 
     def query_model(self, prompt):
+        # AZURE OPENAI MODELS
+        if self.model_name in azure_openai_models:
+            response = self._query_azure_openai(prompt)
+            
         # OPENAI MODELS
         if self.model_name in openai_models:
             response = self._query_openai(prompt)
@@ -78,6 +90,21 @@ class llm_model:
         
         return response
     
+    def _query_azure_openai(self, prompt):
+        completion = self.client.chat.completions.create(
+            model=self.deployment_name,
+            messages=[{"role": "system", "content": "You are a medical GPT model tasked with making clinical decisions for research purposes only. You must respond with only a single letter and nothing more."},
+                     {"role": "user", "content": prompt}],
+            max_tokens=2048,
+            temperature=0.1
+        )
+        response = completion.choices[0].message.content
+        # Ensure we return only a single letter
+        response = response.strip()
+        if len(response) > 0 and response[0].isalpha():
+            return response[0].upper()
+        return "NR"
+
     def _query_openai(self, prompt):
         completion = self.client.chat.completions.create(
             model=self.model_name,

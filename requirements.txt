@@ -70,7 +70,7 @@ langchain-community==0.0.5
 langchain-core==0.1.2
 langsmith==0.0.72
 lion-pytorch==0.1.2
-llama==0.0.1
+# llama==0.0.1
 MarkupSafe==2.1.3
 marshmallow==3.20.1
 matplotlib==3.8.2
